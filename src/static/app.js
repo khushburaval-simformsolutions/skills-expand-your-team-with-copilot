@@ -34,6 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
     technology: { label: "Technology", color: "#e8eaf6", textColor: "#3949ab" },
   };
 
+  const SCHOOL_NAME = "Mergington High School";
+
   // State for activities and filters
   let allActivities = {};
   let currentFilter = "all";
@@ -568,6 +570,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
         }
+        <button class="share-button" data-activity="${name}" aria-label="Share this activity">
+          📤 Share
+        </button>
       </div>
     `;
 
@@ -587,7 +592,121 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Add click handler for share button
+    const shareButton = activityCard.querySelector(".share-button");
+    shareButton.addEventListener("click", (event) => {
+      shareActivity(name, details.description, event.currentTarget);
+    });
+
     activitiesList.appendChild(activityCard);
+  }
+
+  // Generate a shareable URL for an activity
+  function generateShareUrl(activityName) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("activity", activityName);
+    return url.toString();
+  }
+
+  // Share an activity using Web Share API or a custom popup
+  function shareActivity(activityName, description, triggerElement) {
+    const shareUrl = generateShareUrl(activityName);
+    const shareText = `Check out this activity at ${SCHOOL_NAME}: ${activityName} – ${description}`;
+
+    // Use native Web Share API if available (works well on mobile)
+    if (navigator.share) {
+      navigator.share({
+        title: activityName,
+        text: shareText,
+        url: shareUrl,
+      }).catch(() => {
+        // User cancelled or error – do nothing
+      });
+      return;
+    }
+
+    // Fallback: show a custom share popup
+    showSharePopup(activityName, shareText, shareUrl, triggerElement);
+  }
+
+  // Show a custom share popup near the trigger element
+  function showSharePopup(activityName, shareText, shareUrl, triggerElement) {
+    // Remove any existing popup
+    const existing = document.getElementById("share-popup");
+    if (existing) {
+      existing.remove();
+    }
+
+    const encodedUrl = encodeURIComponent(shareUrl);
+    const encodedText = encodeURIComponent(shareText);
+
+    const popup = document.createElement("div");
+    popup.id = "share-popup";
+    popup.className = "share-popup";
+    popup.innerHTML = `
+      <div class="share-popup-header">
+        <span>Share Activity</span>
+        <button class="share-popup-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="share-popup-buttons">
+        <button class="share-option copy-link-btn" title="Copy link to clipboard">
+          🔗 Copy Link
+        </button>
+        <a class="share-option" href="mailto:?subject=${encodeURIComponent(activityName)}&body=${encodedText}%0A%0A${encodedUrl}" target="_blank" rel="noopener noreferrer">
+          ✉️ Email
+        </a>
+        <a class="share-option" href="https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}" target="_blank" rel="noopener noreferrer">
+          🐦 Twitter / X
+        </a>
+        <a class="share-option" href="https://wa.me/?text=${encodedText}%20${encodedUrl}" target="_blank" rel="noopener noreferrer">
+          💬 WhatsApp
+        </a>
+      </div>
+    `;
+    document.body.appendChild(popup);
+
+    // Position popup near the trigger button
+    const rect = triggerElement.getBoundingClientRect();
+    const scrollY = window.scrollY || window.pageYOffset;
+    const scrollX = window.scrollX || window.pageXOffset;
+    popup.style.top = `${rect.bottom + scrollY + 6}px`;
+    popup.style.left = `${rect.left + scrollX}px`;
+
+    // Adjust if popup would overflow the right edge
+    requestAnimationFrame(() => {
+      const popupRect = popup.getBoundingClientRect();
+      if (popupRect.right > window.innerWidth - 10) {
+        popup.style.left = `${window.innerWidth - popupRect.width - 10 + scrollX}px`;
+      }
+    });
+
+    // Copy link button handler
+    popup.querySelector(".copy-link-btn").addEventListener("click", () => {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        showMessage("Link copied to clipboard!", "success");
+        popup.remove();
+      }).catch(() => {
+        showMessage("Could not copy link. Please copy it manually: " + shareUrl, "info");
+        popup.remove();
+      });
+    });
+
+    // Close button
+    popup.querySelector(".share-popup-close").addEventListener("click", () => {
+      popup.remove();
+    });
+
+    // Close when clicking outside
+    function closeOnOutsideClick(event) {
+      if (!popup.contains(event.target) && event.target !== triggerElement) {
+        popup.remove();
+        document.removeEventListener("click", closeOnOutsideClick);
+      }
+    }
+    // Delay to avoid the current click from immediately closing it
+    setTimeout(() => {
+      document.addEventListener("click", closeOnOutsideClick);
+    }, 0);
   }
 
   // Event listeners for search and filter
