@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "mkdir -p ~/.logs && jq -r '\"\\(now | strftime(\"%Y-%m-%d %H:%M:%S\")) | Session: \\(.sessionId) | Transcript: \\(.transcriptPath) | Source: \\(.source)\"' >> ~/.logs/sessions.log",
+        "powershell": "if (!(Test-Path ~/.logs)) { New-Item -ItemType Directory -Path ~/.logs }; $data = $input | ConvertFrom-Json; \"$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') | Session: $($data.sessionId) | Transcript: $($data.transcriptPath) | Source: $($data.source)\" | Add-Content -Path ~/.logs/sessions.log",
+        "cwd": ".",
+        "timeoutSec": 10
+      }
+    ],
+    "preToolUse": [
+      {
+        "matcher": ".*",
+        "type": "command",
+        "bash": "mkdir -p ~/.logs && jq -r '\"\\(now | strftime(\"%Y-%m-%d %H:%M:%S\")) | Tool: \\(.tool) | Session: \\(.sessionId) | Input: \\(.input | tostring)\"' >> ~/.logs/tool-executions.log",
+        "powershell": "if (!(Test-Path ~/.logs)) { New-Item -ItemType Directory -Path ~/.logs }; $data = $input | ConvertFrom-Json; \"$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') | Tool: $($data.tool) | Session: $($data.sessionId) | Input: $($data.input | ConvertTo-Json -Compress)\" | Add-Content -Path ~/.logs/tool-executions.log",
+        "cwd": ".",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}
