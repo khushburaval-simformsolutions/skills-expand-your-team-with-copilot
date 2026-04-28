@@ -499,12 +499,14 @@ document.addEventListener("DOMContentLoaded", () => {
       categoryOrder.forEach((category) => {
         if (!groups[category]) return;
         const typeInfo = activityTypes[category];
+        const count = Object.keys(groups[category]).length;
         const groupSection = document.createElement("div");
         groupSection.className = "activity-group";
+        groupSection.style.setProperty("--group-color", typeInfo.textColor);
         groupSection.innerHTML = `
-          <div class="activity-group-header" style="border-left-color: ${typeInfo.textColor}">
-            <span class="activity-group-label" style="color: ${typeInfo.textColor}">${typeInfo.label}</span>
-            <span class="activity-group-count">${Object.keys(groups[category]).length} activit${Object.keys(groups[category]).length === 1 ? "y" : "ies"}</span>
+          <div class="activity-group-header">
+            <span class="activity-group-label">${typeInfo.label}</span>
+            <span class="activity-group-count">${count} activit${count === 1 ? "y" : "ies"}</span>
           </div>
           <div class="activity-group-cards"></div>
         `;
@@ -535,12 +537,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const orderedDays = [...dayOrder.filter((d) => groups[d]), ...Object.keys(groups).filter((d) => !dayOrder.includes(d))];
       orderedDays.forEach((day) => {
         if (!groups[day]) return;
+        const count = Object.keys(groups[day]).length;
         const groupSection = document.createElement("div");
         groupSection.className = "activity-group";
         groupSection.innerHTML = `
           <div class="activity-group-header">
             <span class="activity-group-label">${day}</span>
-            <span class="activity-group-count">${Object.keys(groups[day]).length} activit${Object.keys(groups[day]).length === 1 ? "y" : "ies"}</span>
+            <span class="activity-group-count">${count} activit${count === 1 ? "y" : "ies"}</span>
           </div>
           <div class="activity-group-cards"></div>
         `;
