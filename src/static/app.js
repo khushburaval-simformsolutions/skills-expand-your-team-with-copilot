@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const dayFilters = document.querySelectorAll(".day-filter");
   const timeFilters = document.querySelectorAll(".time-filter");
   const difficultyFilters = document.querySelectorAll(".difficulty-filter");
+  const groupByFilters = document.querySelectorAll(".group-by-filter");
 
   // Authentication elements
   const loginButton = document.getElementById("login-button");
@@ -44,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentDay = "";
   let currentTimeRange = "";
   let currentDifficultyFilter = "";
+  let currentGroupBy = "";
 
   // Authentication state
   let currentUser = null;
@@ -480,14 +482,88 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Display filtered activities
-    Object.entries(filteredActivities).forEach(([name, details]) => {
-      renderActivityCard(name, details);
-    });
+    // Group and display activities
+    if (currentGroupBy === "category") {
+      // Build groups by category
+      const groups = {};
+      Object.entries(filteredActivities).forEach(([name, details]) => {
+        const type = getActivityType(name, details.description);
+        if (!groups[type]) {
+          groups[type] = {};
+        }
+        groups[type][name] = details;
+      });
+
+      // Render each category group
+      const categoryOrder = ["sports", "arts", "academic", "community", "technology"];
+      categoryOrder.forEach((category) => {
+        if (!groups[category]) return;
+        const typeInfo = activityTypes[category];
+        const count = Object.keys(groups[category]).length;
+        const groupSection = document.createElement("div");
+        groupSection.className = "activity-group";
+        groupSection.style.setProperty("--group-color", typeInfo.textColor);
+        groupSection.innerHTML = `
+          <div class="activity-group-header">
+            <span class="activity-group-label">${typeInfo.label}</span>
+            <span class="activity-group-count">${count} activit${count === 1 ? "y" : "ies"}</span>
+          </div>
+          <div class="activity-group-cards"></div>
+        `;
+        activitiesList.appendChild(groupSection);
+        const cardsContainer = groupSection.querySelector(".activity-group-cards");
+        Object.entries(groups[category]).forEach(([name, details]) => {
+          renderActivityCard(name, details, cardsContainer);
+        });
+      });
+    } else if (currentGroupBy === "day") {
+      // Build groups by day
+      const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      const groups = {};
+      Object.entries(filteredActivities).forEach(([name, details]) => {
+        const days = details.schedule_details ? details.schedule_details.days : [];
+        if (days.length === 0) {
+          if (!groups["Other"]) groups["Other"] = {};
+          groups["Other"][name] = details;
+        } else {
+          days.forEach((day) => {
+            if (!groups[day]) groups[day] = {};
+            groups[day][name] = details;
+          });
+        }
+      });
+
+      // Render each day group in order
+      const orderedDays = [...dayOrder.filter((d) => groups[d]), ...Object.keys(groups).filter((d) => !dayOrder.includes(d))];
+      orderedDays.forEach((day) => {
+        if (!groups[day]) return;
+        const count = Object.keys(groups[day]).length;
+        const groupSection = document.createElement("div");
+        groupSection.className = "activity-group";
+        groupSection.innerHTML = `
+          <div class="activity-group-header">
+            <span class="activity-group-label">${day}</span>
+            <span class="activity-group-count">${count} activit${count === 1 ? "y" : "ies"}</span>
+          </div>
+          <div class="activity-group-cards"></div>
+        `;
+        activitiesList.appendChild(groupSection);
+        const cardsContainer = groupSection.querySelector(".activity-group-cards");
+        Object.entries(groups[day]).forEach(([name, details]) => {
+          renderActivityCard(name, details, cardsContainer);
+        });
+      });
+    } else {
+      // No grouping – default behaviour
+      Object.entries(filteredActivities).forEach(([name, details]) => {
+        renderActivityCard(name, details);
+      });
+    }
   }
 
   // Function to render a single activity card
-  function renderActivityCard(name, details) {
+  function renderActivityCard(name, details, container) {
+    const targetContainer = container || activitiesList;
     const activityCard = document.createElement("div");
     activityCard.className = "activity-card";
 
@@ -610,7 +686,7 @@ document.addEventListener("DOMContentLoaded", () => {
       shareActivity(name, details.description, event.currentTarget);
     });
 
-    activitiesList.appendChild(activityCard);
+    targetContainer.appendChild(activityCard);
   }
 
   // Generate a shareable URL for an activity
@@ -781,6 +857,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Update current difficulty filter and display filtered activities
       currentDifficultyFilter = button.dataset.difficulty;
+      displayFilteredActivities();
+    });
+  });
+
+  // Add event listeners for group-by buttons
+  groupByFilters.forEach((button) => {
+    button.addEventListener("click", () => {
+      // Update active class
+      groupByFilters.forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      // Update current group-by and display activities
+      currentGroupBy = button.dataset.groupby;
       displayFilteredActivities();
     });
   });
