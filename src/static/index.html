@@ -7,9 +7,20 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <!-- Animated git-style branch lines background -->
+    <canvas id="git-branches-canvas" aria-hidden="true"></canvas>
+
     <header>
       <h1>Mergington High School</h1>
       <h2>Extracurricular Activities</h2>
+      <!-- Octocat mascots from https://octodex.github.com/ -->
+      <div class="header-mascots">
+        <img class="mascot-img" src="https://octodex.github.com/images/class-act.png" alt="Class Act Octocat" title="Class Act" />
+        <img class="mascot-img" src="https://octodex.github.com/images/Professortocat_v2.png" alt="Professor Octocat" title="Professortocat" />
+        <img class="mascot-img" src="https://octodex.github.com/images/labtocat.png" alt="Lab Octocat" title="Labtocat" />
+        <img class="mascot-img" src="https://octodex.github.com/images/codercat.jpg" alt="Coder Octocat" title="Codercat" />
+        <img class="mascot-img" src="https://octodex.github.com/images/adventure-cat.png" alt="Adventure Octocat" title="Adventure Cat" />
+      </div>
       <div id="user-controls">
         <div id="user-status">
           <button id="login-button" class="icon-button">
@@ -188,5 +199,6 @@
     </div>
 
     <script src="app.js"></script>
+    <script src="git-animation.js"></script>
   </body>
 </html>
